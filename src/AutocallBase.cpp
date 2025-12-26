@@ -1,6 +1,5 @@
 #include "AutocallBase.hpp"
-
-#include <stdexcept>
+#include <algorithm>
 #include <utility>
 
 AutocallBase::AutocallBase(std::string underlying,
@@ -16,31 +15,10 @@ AutocallBase::AutocallBase(std::string underlying,
       notional_(notional),
       couponRate_(couponRate),
       callBarrier_(callBarrier),
-      protectionBarrier_(protectionBarrier) {
-    if (observationTimes_.empty()) {
-        throw std::invalid_argument("Autocall requires observation dates");
-    }
-}
-
-double AutocallBase::payoff(const std::vector<double>& path) const {
-    return payoffAndPayTime(path).first;
-}
-
-const std::vector<double>& AutocallBase::observationTimes() const {
-    return observationTimes_;
-}
-
-const std::string& AutocallBase::underlying() const {
-    return underlying_;
-}
-
-std::pair<double, double> AutocallBase::payoffAndPayTime(
-    const std::vector<double>& path) const {
-    return payoffAndPayTimeImpl(path);
-}
+      protectionBarrier_(protectionBarrier) {} // Plus de vérification stricte ici si on veut permettre des produits sans obs (ex: payoff immédiat)
 
 double AutocallBase::terminalRedemption(double spotT) const {
-    // Plain maturity rule: protect to barrier, otherwise capital-at-risk vs spot0.
+    // Règle standard : Protection du capital si > barrière, sinon perte (PDI)
     if (spotT >= protectionBarrier_) {
         return notional_;
     }
