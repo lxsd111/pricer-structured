@@ -12,11 +12,8 @@ public:
   double discountedPayoff(const std::vector<double> &path,
                           double riskFreeRate) const override final;
 
-  const std::vector<double> &observationTimes() const override;
-  const std::string &underlying() const override;
-
 protected:
-  const std::vector<double> &times() const { return observationTimes_; }
+  const std::vector<double> &times() const { return observationTimes(); }
   double spot0() const { return spot0_; }
   double notional() const { return notional_; }
 
@@ -24,8 +21,6 @@ protected:
   virtual double payoffImpl(const std::vector<double> &path) const = 0;
 
 private:
-  std::string underlying_;
-  std::vector<double> observationTimes_;
   double spot0_{};
   double notional_{};
 };

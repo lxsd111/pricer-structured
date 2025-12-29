@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <random>
+#include <vector>
 
 namespace {
 constexpr double kSpotBumpFraction = 0.005;
@@ -210,3 +212,5 @@ PricingResults priceAutocall(const PricingInputs &inputs) {
 
     vega = (vegaPrice - price) / kVolBumpAdd;
   }
+  return {price, stdError, delta, vega, bid, ask};
+}

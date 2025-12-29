@@ -1,5 +1,6 @@
 #include "SimpleAutocall.hpp"
 #include <algorithm>
+#include <string>
 #include <vector>
 
 SimpleAutocall::SimpleAutocall(std::string underlying,
@@ -21,9 +22,8 @@ double SimpleAutocall::discountedPayoff(const std::vector<double> &path,
       return amount * std::exp(-riskFreeRate * obs[i]);
     }
   }
-}
 
-const double finalSpot = (steps > 0) ? path[steps - 1] : spot0();
-double amount = terminalRedemption(finalSpot);
-return amount * std::exp(-riskFreeRate * obs.back());
+  const double finalSpot = (steps > 0) ? path[steps - 1] : spot0();
+  double amount = terminalRedemption(finalSpot);
+  return amount * std::exp(-riskFreeRate * obs.back());
 }
