@@ -7,6 +7,7 @@
 
 #include "SimpleAutocall.hpp"
 #include <algorithm>
+#include <string>
 #include <vector>
 
 SimpleAutocall::SimpleAutocall(std::string underlying,

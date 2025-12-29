@@ -9,13 +9,10 @@
 #include <utility>
 
 CliquetBase::CliquetBase(std::string underlying,
-                         std::vector<double> observationTimes,
-                         double spot0,
+                         std::vector<double> observationTimes, double spot0,
                          double notional)
-    : underlying_(std::move(underlying)),
-      observationTimes_(std::move(observationTimes)),
-      spot0_(spot0),
-      notional_(notional) {}
+    : StructuredProduct(std::move(underlying), std::move(observationTimes)),
+      spot0_(spot0), notional_(notional) {}
 
 std::vector<CashFlow> CliquetBase::cashFlows(const std::vector<double>& path) const {
     // Delegate the specific path-dependent math (e.g., Sum of Caps, Max Return)
@@ -23,14 +20,10 @@ std::vector<CashFlow> CliquetBase::cashFlows(const std::vector<double>& path) co
     double amount = payoffImpl(path); 
     
     // Cliquets usually have a single cash flow at the very end (maturity).
-    double payTime = observationTimes_.empty() ? 0.0 : observationTimes_.back();
+    // We access the observation times via the base class method.
+    const auto& times = observationTimes();
+    double payTime = times.empty() ? 0.0 : times.back();
     return {{amount, payTime}};
 }
 
-const std::vector<double>& CliquetBase::observationTimes() const {
-    return observationTimes_;
-}
-
-const std::string& CliquetBase::underlying() const {
-    return underlying_;
-}
+// Note: observationTimes() and underlying() are handled by the base class StructuredProduct.

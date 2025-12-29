@@ -8,6 +8,7 @@
 #include "StepDownAutocall.hpp"
 #include <algorithm>
 #include <utility>
+#include <vector>
 
 StepDownAutocall::StepDownAutocall(std::string underlying,
                                    std::vector<double> observationTimes,
@@ -24,7 +25,7 @@ StepDownAutocall::StepDownAutocall(std::string underlying,
 
 std::vector<CashFlow> StepDownAutocall::cashFlows(const std::vector<double>& path) const {
     std::vector<CashFlow> flows;
-    const auto& obs = times();
+    const auto &obs = times();
     const std::size_t steps = std::min(path.size(), obs.size());
 
     for (std::size_t i = 0; i < steps; ++i) {
