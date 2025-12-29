@@ -3,25 +3,30 @@
 #include <string>
 #include <vector>
 
+// Define the CashFlow structure used throughout the project
+struct CashFlow {
+    double amount;
+    double time;
+};
+
 class StructuredProduct {
 public:
-  StructuredProduct(std::string underlying,
-                    std::vector<double> observationTimes)
-      : underlying_(std::move(underlying)),
-        observationTimes_(std::move(observationTimes)) {}
+    StructuredProduct(std::string underlying,
+                      std::vector<double> observationTimes)
+        : underlying_(std::move(underlying)),
+          observationTimes_(std::move(observationTimes)) {}
 
-  virtual ~StructuredProduct() = default;
+    virtual ~StructuredProduct() = default;
 
-  // Calcule directement le payoff total actualisé pour un chemin donné
-  virtual double discountedPayoff(const std::vector<double> &path,
-                                  double riskFreeRate) const = 0;
+    // NEW SIGNATURE: Returns a list of cash flows instead of a single discounted double
+    virtual std::vector<CashFlow> cashFlows(const std::vector<double> &path) const = 0;
 
-  const std::vector<double> &observationTimes() const {
-    return observationTimes_;
-  }
-  const std::string &underlying() const { return underlying_; }
+    const std::vector<double> &observationTimes() const {
+        return observationTimes_;
+    }
+    const std::string &underlying() const { return underlying_; }
 
 private:
-  std::string underlying_;
-  std::vector<double> observationTimes_;
+    std::string underlying_;
+    std::vector<double> observationTimes_;
 };

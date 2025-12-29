@@ -21,8 +21,7 @@ public:
    * @param couponRate Coupon rate (e.g., 0.05 for 5%).
    * @param callBarrier Autocall barrier level (absolute value).
    * @param protectionBarrier Protection barrier level (absolute value).
-   * @param airbagFloor The factor defining the Airbag Strike (e.g., 0.7 for 70%
-   * of Spot0).
+   * @param airbagFloor The factor defining the Airbag Strike (e.g., 0.7 for 70% of Spot0).
    */
   AirbagAutocall(std::string underlying, std::vector<double> observationTimes,
                  double spot0, double notional, double couponRate,
@@ -30,14 +29,12 @@ public:
                  double airbagFloor);
 
   /**
-   * @brief Calculates the discounted payoff for a given path.
+   * @brief Calculates the stream of cash flows for a given path.
    *
    * @param path Simulated price path of the underlying.
-   * @param riskFreeRate The risk free interest rate.
-   * @return double The total discounted payoff.
+   * @return std::vector<CashFlow> List of cash flows (amount and time).
    */
-  double discountedPayoff(const std::vector<double> &path,
-                          double riskFreeRate) const override;
+  std::vector<CashFlow> cashFlows(const std::vector<double> &path) const override;
 
 private:
   /**
@@ -48,13 +45,11 @@ private:
    * - If FinalSpot >= ProtectionBarrier: Receive Notional (Capital Guaranteed).
    * - If FinalSpot < ProtectionBarrier: Loss is amortized starting from the
    * Airbag Strike. Redemption = Notional * (FinalSpot / (Spot0 * AirbagFloor)).
-   * This reduces the loss compared to a standard PDI (Put Down and In).
    *
    * @param spotT The spot price at maturity.
    * @return The redemption amount.
    */
   double terminalRedemption(double spotT) const override;
 
-  double
-      airbagFloor_{}; // Factor to determine the Airbag Strike (e.g., 0.6, 0.7)
+  double airbagFloor_;
 };

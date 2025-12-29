@@ -35,7 +35,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
-#include <algorithm> // Ajout nécessaire pour std::max
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -690,9 +690,15 @@ void PricerWindow::updatePayoffChart() {
         path.push_back(val);
       }
 
-      // Calculate total payoff (sum of all flows)
-      // Use 0.0 rate to get the raw sum of flows for the chart
-      double totalPayoff = product->discountedPayoff(path, 0.0);
+      // -----------------------------------------------------------------------
+      // CORRECTION: Use cashFlows instead of deprecated discountedPayoff
+      // -----------------------------------------------------------------------
+      std::vector<CashFlow> flows = product->cashFlows(path);
+      double totalPayoff = 0.0;
+      for (const auto &flow : flows) {
+        totalPayoff += flow.amount;
+      }
+      // -----------------------------------------------------------------------
 
       payoffSeries->append(st, totalPayoff);
       minY = std::min(minY, totalPayoff);

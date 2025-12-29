@@ -45,18 +45,26 @@ std::unique_ptr<PathModelBase> makePathModel(const PricingInputs &inputs) {
   return std::make_unique<BlackScholesMC>(inputs.sigma);
 }
 
+// -----------------------------------------------------------------------------
+// CORE PRICING LOOP
+// -----------------------------------------------------------------------------
 double runMonteCarlo(const StructuredProduct &product, const MarketData &data,
                      const PathModelBase &model, std::size_t paths,
                      unsigned int seed, double &standardError) {
   const auto &times = product.observationTimes();
-  // Retrieve spot from MarketData
   const auto &quote = data.getQuote(product.underlying());
   const double r = data.riskFreeRate();
 
   std::vector<double> immediatePath{quote.spot};
 
+  // Edge case: Product with no observation times (immediate payoff?)
   if (times.empty()) {
-    double val = product.discountedPayoff(immediatePath, r);
+    // UPDATED: Use cashFlows instead of discountedPayoff
+    auto flows = product.cashFlows(immediatePath);
+    double val = 0.0;
+    for (const auto &flow : flows) {
+      val += flow.amount * std::exp(-r * flow.time);
+    }
     standardError = 0.0;
     return val;
   }
@@ -66,13 +74,19 @@ double runMonteCarlo(const StructuredProduct &product, const MarketData &data,
   double payoffSqSum = 0.0;
 
   for (std::size_t i = 0; i < paths; ++i) {
-    // The model uses quote.spot as the starting point
+    // 1. Simulate Path
     const std::vector<double> path =
         model.simulatePath(quote.spot, times, data, rng);
 
-    // NOUVEAU : Calcul direct du payoff actualisé
-    double pathValue =
-        product.discountedPayoff(path.empty() ? immediatePath : path, r);
+    // 2. Retrieve Cash Flows (New Architecture)
+    // We handle the case where the path might be empty (rare) by using immediatePath
+    std::vector<CashFlow> flows = product.cashFlows(path.empty() ? immediatePath : path);
+
+    // 3. Manual Discounting
+    double pathValue = 0.0;
+    for (const auto &flow : flows) {
+        pathValue += flow.amount * std::exp(-r * flow.time);
+    }
 
     payoffSum += pathValue;
     payoffSqSum += pathValue * pathValue;
@@ -91,12 +105,8 @@ double runMonteCarlo(const StructuredProduct &product, const MarketData &data,
 PricingResults priceAutocall(const PricingInputs &inputs) {
   MarketData marketData;
   marketData.setRiskFreeRate(inputs.rate);
-  // Store spot and sigma in MarketData, even if BS uses its own sigma member
-  // now, this is useful for consistency or if other components need it.
   marketData.setQuote(inputs.underlying,
                       MarketData::Quote{inputs.spot, inputs.sigma});
-
-  // No need for setVolProvider here.
 
   std::unique_ptr<StructuredProduct> product;
   if (inputs.productFamily == ProductFamily::Autocall) {
@@ -173,8 +183,6 @@ PricingResults priceAutocall(const PricingInputs &inputs) {
     spotUp.setQuote(inputs.underlying, bumpedQuote);
 
     double ignore = 0.0;
-    // Note: The model remains the same (parameters unchanged), only MarketData
-    // changes (spot)
     const double bumpedPrice = runMonteCarlo(*product, spotUp, *pathModel,
                                              inputs.paths, inputs.seed, ignore);
     delta = (bumpedPrice - price) / spotBumpSize;
@@ -186,11 +194,6 @@ PricingResults priceAutocall(const PricingInputs &inputs) {
   if (inputs.modelType == ModelType::Heston) {
     // HESTON LOGIC: Shock the model parameters (v0)
     PricingInputs bumpedInputs = inputs;
-    // Shock the initial variance.
-    // Warning: kVolBumpAdd is intended for volatility (e.g., +1%).
-    // To remain consistent, we can increase v0 significantly or
-    // simply apply the bump as is if the user understands it is a sensitivity
-    // to v0.
     bumpedInputs.hestonV0 += kVolBumpAdd;
 
     auto vegaModel = makePathModel(bumpedInputs);
@@ -207,8 +210,6 @@ PricingResults priceAutocall(const PricingInputs &inputs) {
 
     auto vegaModel = makePathModel(bumpedInputs);
 
-    // To ensure consistency, we also update MarketData
-    // (although our new BSMC uses the internal sigma)
     MarketData volUp = marketData;
     auto q = volUp.getQuote(inputs.underlying);
     q.sigma += kVolBumpAdd;
