@@ -1,3 +1,11 @@
+/*
+ * SUMMARY: The central orchestration layer for the pricing engine.
+ * It acts as a factory to instantiate the specific product (e.g., Phoenix, Airbag)
+ * and stochastic model (Black-Scholes or Heston) based on user inputs.
+ * It then executes the Monte Carlo simulation and calculates key risk metrics
+ * (Delta, Vega) by re-running the pricing loop with perturbed market data.
+ */
+
 #include "PricerRunner.hpp"
 
 #include "AirbagAutocall.hpp"

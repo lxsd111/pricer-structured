@@ -1,3 +1,10 @@
+/*
+ * SUMMARY: The base class for all Autocall variations.
+ * It stores shared characteristics (barriers, notional, initial spot) and
+ * implements the standard "Capital at Risk" logic at maturity:
+ * 100% capital back if above protection, otherwise linear loss.
+ */
+
 #include "AutocallBase.hpp"
 
 AutocallBase::AutocallBase(std::string underlying,
@@ -13,11 +20,12 @@ AutocallBase::AutocallBase(std::string underlying,
       spot0_(spot0) {}
 
 double AutocallBase::terminalRedemption(double finalSpot) const {
-    // If the final spot is above the protection barrier,
-    // capital is guaranteed (plus potentially the last coupon, handled in derived classes).
+    // Check if the protection barrier (Knock-In) was breached at maturity.
     if (finalSpot >= protectionBarrier_) {
-        return notional_;
+        return notional_; // Barrier intact: Capital is safe.
     }
-    // Capital at risk: The investor loses money proportional to the spot drop.
+    
+    // Barrier breached: Capital is at risk.
+    // The redemption mirrors the underlying's performance (e.g., -40% spot -> -40% capital).
     return notional_ * (finalSpot / spot0_);
 }

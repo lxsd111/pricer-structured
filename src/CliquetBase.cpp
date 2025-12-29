@@ -1,3 +1,10 @@
+/*
+ * SUMMARY: Base class for Cliquet-style products.
+ * Unlike Autocalls which can exit early, Cliquets typically run to maturity.
+ * This class handles the common infrastructure and the single payment timing,
+ * relying on the "Template Method" pattern (payoffImpl) for the specific payoff logic.
+ */
+
 #include "CliquetBase.hpp"
 #include <utility>
 
@@ -11,7 +18,11 @@ CliquetBase::CliquetBase(std::string underlying,
       notional_(notional) {}
 
 std::vector<CashFlow> CliquetBase::cashFlows(const std::vector<double>& path) const {
-    double amount = payoffImpl(path); // Appelle MaxReturn ou CappedCoupons
+    // Delegate the specific path-dependent math (e.g., Sum of Caps, Max Return)
+    // to the derived class implementation.
+    double amount = payoffImpl(path); 
+    
+    // Cliquets usually have a single cash flow at the very end (maturity).
     double payTime = observationTimes_.empty() ? 0.0 : observationTimes_.back();
     return {{amount, payTime}};
 }
